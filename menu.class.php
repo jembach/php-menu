@@ -26,24 +26,20 @@ class menu {
 		if (self::$db===null) {
 			if(defined(DB_USER) && defined(DB_PASSWORD) && defined(DB_HOST) && defined(DB_DATABASE))
 				self::$db=new db(DB_HOST,DB_USER,DB_PASSWORD,DB_DATABASE);
-			else
+			else {
 				throw new Exception("To use this extension you have to set the databse connection information!", 1);
-				
-			CREATE TABLE `menu` (
-  `ID` int(11) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `href` varchar(255) NOT NULL,
-  `priority` int(11) NOT NULL,
-  `subgroup` int(11) NOT NULL,
-  `meta` text NOT NULL,
-  `active` smallint(6) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-			ALTER TABLE `menu`
-  ADD PRIMARY KEY (`ID`);
-
-  ALTER TABLE `menu`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;COMMIT;
+				return;
+			}
+			if(self::$db->tableExists('config')==false){
+				self::$db->startTransaction();
+				self::$db->rawSQL("CREATE TABLE `menu` (`ID` int(11) NOT NULL,`name` varchar(255) NOT NULL,
+														`href` varchar(255) NOT NULL,`priority` int(11) NOT NULL,
+														`subgroup` int(11) NOT NULL,`meta` text NOT NULL,
+														`active` smallint(6) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
+				self::$db->rawSQL("ALTER TABLE `menu` ADD PRIMARY KEY (`ID`);");
+				self::$db->rawSQL("ALTER TABLE `menu` MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;");
+				self::$db->commit();
+			}
 		}
 	}
 
