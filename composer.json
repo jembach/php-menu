@@ -1,0 +1,30 @@
+{
+	"name": "jembach/php-menu",
+	"description": "PHP class that handles a menu structure",
+  "type": "library",
+  "keywords": [
+    "menu",
+    "php"
+  ],
+  "license": "GPL-3.0",
+  "version": "1.0",
+  "authors": [
+        {
+            "name": "Jonas Embach",
+            "role": "Developer"
+        }
+    ],
+  "support": {
+    "docs": "https://github.com/jembach/php-menu/readme.md" 
+  },
+  "repositories": [
+        { "type": "vcs", "url": "https://github.com/jembach/php-database" }
+  ],
+	"require": {
+		"php": ">=5.3.0",
+    "jembach/php-database": "*"
+	},
+	"autoload": {
+		"files": ["menu.class.php"]
+	}
+}
