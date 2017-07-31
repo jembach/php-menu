@@ -33,7 +33,7 @@ class menu {
 			if(self::$db->tableExists('config')==false){
 				self::$db->startTransaction();
 				self::$db->rawSQL("CREATE TABLE `menu` (`ID` int(11) NOT NULL,`name` varchar(255) NOT NULL,
-														`href` varchar(255) NOT NULL,`priority` int(11) NOT NULL,
+														`href` varchar(255) NOT NULL DEFAULT '',`priority` int(11) NOT NULL,
 														`subgroup` int(11) NOT NULL,`meta` text NOT NULL,
 														`active` smallint(6) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
 				self::$db->rawSQL("ALTER TABLE `menu` ADD PRIMARY KEY (`ID`);");
@@ -200,6 +200,9 @@ class menu {
 				$data['priority']=$last['priority']+1;
 				unset(self::$groupIDs[array_search($data['subgroup'],self::$groupIDs)]);
 			}
+			if(!isset($data['meta']))
+				$data['meta']=array();
+			$data['meta']=serialize($data['meta']);
 			self::$db->Insert('menu',$data);
 			return true;
 		} else 
