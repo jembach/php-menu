@@ -38,7 +38,7 @@ class menu {
 														`active` smallint(6) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
 				self::$db->rawSQL("ALTER TABLE `menu` ADD PRIMARY KEY (`ID`);");
 				self::$db->rawSQL("ALTER TABLE `menu` MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;");
-				self::$db->commit();
+				self::$db->commitTransaction();
 			}
 		}
 	}
