@@ -66,7 +66,7 @@ class menu {
 		#prüfen, ob Gruppe schonmal aufgerufen wurde
 		switch(in_array($group,self::$groupIDs)){
 			case 0:
-				$result=self::$db->Select('menu',array(new dbCond('subgroup',$group),new dbOrder('priority','ASC')));
+				$result=self::$db->Select('menu',new dbCond('subgroup',$group),new dbOrder('priority','ASC'));
 				self::$groupIDs[]=$group;
 				if($result==null){
 					return array();
@@ -100,7 +100,7 @@ class menu {
 	function convertIDToSubgroup($id){
 		if(isset(self::$menu[$id])) return self::$menu[$id]['subgroup'];
 		else {
-			$result=self::$db->Select('menu',array(new dbCond('ID',$id)));
+			$result=self::$db->Select('menu',new dbCond('ID',$id));
 			if($result==null){
 				return false;
 			} else {
@@ -119,7 +119,7 @@ class menu {
 		if(isset(self::$menu[$id])) 
 			return self::$menu[$id];
 		else {
-			$result=self::$db->Select('menu',array(new dbCond('ID', $id)));
+			$result=self::$db->Select('menu',new dbCond('ID', $id));
 			if($result==null)
 				return array();
 			else { 
@@ -137,7 +137,7 @@ class menu {
 	function checkEntry($id){
 		if(isset(self::$menu[$id])){ return true; }
 		else {
-			$result=self::$db->Select('menu__',array(new dbCond('ID',$id)));
+			$result=self::$db->Select('menu__',new dbCond('ID',$id));
 			self::saveData($result[0]);
 			if(($result!=null)&&(count($result)==1)) return true;
 		}
@@ -149,7 +149,7 @@ class menu {
 	 * @return     string			The title
 	 */
 	function getDisplayName($id){
-		$result=self::$db->Select('menu__',array(new dbCond('ID',$id)));
+		$result=self::$db->Select('menu__',new dbCond('ID',$id));
 		if(($result!=null)&&(count($result)==1)) {
 			$menu[$result[0]['ID']]=$result[0];
 			return $result[0]['name'];
@@ -181,7 +181,7 @@ class menu {
 				unset($data[$key]);
 		}
 		$data['meta']=serialize($data['meta']);
-		self::$db->Update('menu',$data,array(new dbCond('ID',$id)));
+		self::$db->Update('menu',$data,new dbCond('ID',$id));
 		$data['ID']=$id;
 		self::saveData($data);
 	}
