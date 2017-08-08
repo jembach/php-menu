@@ -22,23 +22,33 @@ class menu {
 	 * initialize the class to access functions static
 	 * also it creates the database table
 	 */
-	public function checkObject() {
+	public static function checkObject() {
 		if (self::$db===null) {
-			if(defined("DB_USER") && defined("DB_PASSWORD") && defined("DB_HOST") && defined("DB_DATABASE"))
-				self::$db=new db(DB_HOST,DB_USER,DB_PASSWORD,DB_DATABASE);
-			else {
-				throw new Exception("To use this extension you have to set the databse connection information!", 1);
-				return;
+			if (self::$db===null) {
+				if(defined("DB_USER") && defined("DB_PASSWORD") && defined("DB_HOST") && defined("DB_DATABASE"))
+					try {
+						self::$db=new db(DB_HOST,DB_USER,DB_PASSWORD,DB_DATABASE);	
+					} catch (Exception $e) {
+						trigger_error("While accessing the database an error occured: ".$e->getMessage(),E_USER_WARNING);
+					}
+				else {
+					throw new Exception("To use this extension you have to set the databse connection information!", 1);
+					return;
+				}
 			}
-			if(self::$db->tableExists('config')==false){
-				self::$db->startTransaction();
-				self::$db->rawSQL("CREATE TABLE `menu` (`ID` int(11) NOT NULL,`name` varchar(255) NOT NULL,
-														`href` varchar(255) NOT NULL DEFAULT '',`priority` int(11) NOT NULL,
-														`subgroup` int(11) NOT NULL,`meta` text NOT NULL,
-														`active` smallint(6) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
-				self::$db->rawSQL("ALTER TABLE `menu` ADD PRIMARY KEY (`ID`);");
-				self::$db->rawSQL("ALTER TABLE `menu` MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;");
-				self::$db->commitTransaction();
+			try {
+				if(self::$db->tableExists('config')==false){
+					self::$db->startTransaction();
+					self::$db->rawSQL("CREATE TABLE `menu` (`ID` int(11) NOT NULL,`name` varchar(255) NOT NULL,
+															`href` varchar(255) NOT NULL DEFAULT '',`priority` int(11) NOT NULL,
+															`subgroup` int(11) NOT NULL,`meta` text NOT NULL,
+															`active` smallint(6) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
+					self::$db->rawSQL("ALTER TABLE `menu` ADD PRIMARY KEY (`ID`);");
+					self::$db->rawSQL("ALTER TABLE `menu` MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;");
+					self::$db->commitTransaction();
+				}
+			} catch (Exception $e){
+				trigger_error("While loading the database configurations an error occured: ".$e->getMessage(),E_USER_WARNING);
 			}
 		}
 	}
@@ -49,8 +59,8 @@ class menu {
 	 * @param      integer   $id     The entry identifier of one entry in the group
 	 * @return     array 		  	 The menu entry's
 	 */
-	public function getEntrysByMenuID($id){
-		if(self::checkMenu($id)){
+	public static function getEntrysByMenuID($id){
+		if(self::checkEntry($id)){
 			return self::getEntrysInGroup(self::convertIDToSubgroup($id));
 		} else {
 			return array();
@@ -62,13 +72,18 @@ class menu {
 	 * @param      integer         $group  	The group identifier
 	 * @return     array 		  			The menu entrys in the group
 	 */
-	function getEntrysInGroup($group){
+	public static function getEntrysInGroup($group){
 		#prüfen, ob Gruppe schonmal aufgerufen wurde
 		switch(in_array($group,self::$groupIDs)){
 			case 0:
-				$result=self::$db->Select('menu',new dbCond('subgroup',$group),new dbOrder('priority','ASC'));
+				try {
+					$result=self::$db->Select('menu',new dbCond('subgroup',$group),new dbOrder('priority','ASC'));
+				}
+				catch (Exception $e){
+					return array();
+				}
 				self::$groupIDs[]=$group;
-				if($result==null){
+				if($result==null || !is_array($result)){
 					return array();
 				} else {
 					#ergebnisse durchgehen
@@ -97,10 +112,15 @@ class menu {
 	 * @param      integer   $id   	The identifier of the menu entry
 	 * @return     boolean|integer  The subgroup ID
 	 */
-	function convertIDToSubgroup($id){
+	public static function convertIDToSubgroup($id){
 		if(isset(self::$menu[$id])) return self::$menu[$id]['subgroup'];
 		else {
-			$result=self::$db->Select('menu',new dbCond('ID',$id));
+			try{
+				$result=self::$db->Select('menu',new dbCond('ID',$id));
+			}
+			catch(Exception $e){
+				return false;
+			}
 			if($result==null){
 				return false;
 			} else {
@@ -115,11 +135,16 @@ class menu {
 	 * @param      integer  $id   The identifier of the menu entry
 	 * @return     array 		  The menu entry information
 	 */
-	function getEntry($id){
+	public static function getEntry($id){
 		if(isset(self::$menu[$id])) 
 			return self::$menu[$id];
 		else {
-			$result=self::$db->Select('menu',new dbCond('ID', $id));
+			try {
+				$result=self::$db->Select('menu',new dbCond('ID', $id));
+			}
+			catch(Exception $e) {
+				return array();
+			}
 			if($result==null)
 				return array();
 			else { 
@@ -134,13 +159,19 @@ class menu {
 	 * @param      integer   $id 	The identifier
 	 * @return     boolean  		true if exists, false if not 
 	 */
-	function checkEntry($id){
+	public static function checkEntry($id){
 		if(isset(self::$menu[$id])){ return true; }
 		else {
-			$result=self::$db->Select('menu__',new dbCond('ID',$id));
-			self::saveData($result[0]);
-			if(($result!=null)&&(count($result)==1)) return true;
+			try{
+				$result=self::$db->Select('menu__',new dbCond('ID',$id));
+				self::saveData($result[0]);
+				if(($result!=null)&&(count($result)==1)) return true;
+			}
+			catch(Exception $e) {
+				return false;
+			}
 		}
+		return false;
 	}
 	
 	/**
@@ -148,30 +179,37 @@ class menu {
 	 * @param      integer  $id 	The identifier
 	 * @return     string			The title
 	 */
-	function getDisplayName($id){
-		$result=self::$db->Select('menu__',new dbCond('ID',$id));
+	public static function getDisplayName($id){
+		try {
+			$result=self::$db->Select('menu__',new dbCond('ID',$id));
+		}
+		catch(Exception $e) {
+			return "";
+		}
 		if(($result!=null)&&(count($result)==1)) {
 			$menu[$result[0]['ID']]=$result[0];
 			return $result[0]['name'];
 		}
+		return "";
 	}
 	
 	/**
 	 * caches an entry
 	 * @param      array  $data   The data of an entry
 	 */
-	protected function saveData($data){
-		$data['meta']=unserialize($data['meta']);
+	protected static function saveData($data){
+		$data['meta']=@unserialize($data['meta']);
+		if(!is_array($data['meta'])) $data['meta']=array();
 		self::$menu[$data['ID']]=$data;
 	}
 	
 	
 	/**
 	 * updates a menu entry
-	 * @param      <type>   $data   The data
-	 * @return     boolean  ( description_of_the_return_value )
+	 * @param      array   $data   The data
+	 * @return     boolean  		true if succesfull
 	 */
-	public function update($data){
+	public static function update($data){
 		if(!isset($data['ID'])) return false;
 		$id=$data['ID']; //cache id because in query isn't allowed to override
 		//override data
@@ -181,17 +219,23 @@ class menu {
 				unset($data[$key]);
 		}
 		$data['meta']=serialize($data['meta']);
-		self::$db->Update('menu',$data,new dbCond('ID',$id));
-		$data['ID']=$id;
-		self::saveData($data);
+		try {
+			self::$db->Update('menu',$data,new dbCond('ID',$id));
+			$data['ID']=$id;
+			self::saveData($data);
+			return true;
+		} catch (Exception $e) {
+			trigger_error("menu entry couldn't be updated: ".$e->getMessage(),E_USER_WARNING);
+			return false;
+		}
 	}
 
 	/**
 	 * adds an menu entry
-	 * @param      <type>   $data   The data
+	 * @param      arrray   $data   The data
 	 * @return     boolean  		true if insert was succesfully
 	 */
-	public function add($data){
+	public static function add($data){
 		$required=array("name","subgroup");
 		if(count(array_intersect_key(array_flip($required), $data)) === count($required)){
 			if(!isset($data['active'])) $data['active']=1;
@@ -203,10 +247,28 @@ class menu {
 			if(!isset($data['meta']))
 				$data['meta']=array();
 			$data['meta']=serialize($data['meta']);
-			self::$db->Insert('menu',$data);
-			return true;
-		} else 
+			try {
+				self::$db->Insert('menu',$data);
+				return true;	
+			} catch (Exception $e) {
+				return false;
+			}
+		} else {
 			return false;
+		}
+	}
+
+	/**
+	 * deletes an menu entry
+	 * @param      integer   $id   The identifier
+	 */
+	public static function delete($id){
+		try {
+			self::$db->Delete("menu",new dbCond("ID",$id));
+			unset(self::$menu[$id]);	
+		} catch (Exception $e) {
+			trigger_error("menu entry couldn't be deleted: ".$e->getMessage(),E_USER_WARNING);
+		}
 	}
 
 }
