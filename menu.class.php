@@ -41,10 +41,12 @@ class menu {
 					self::$db->startTransaction();
 					self::$db->rawSQL("CREATE TABLE `menu` (`ID` int(11) NOT NULL,`name` varchar(255) NOT NULL,
 															`href` varchar(255) NOT NULL DEFAULT '',`priority` int(11) NOT NULL,
-															`subgroup` int(11) NOT NULL,`meta` text NOT NULL,
+															`subgroup` int(11) NULL,`meta` text NOT NULL,
 															`active` smallint(6) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
-					self::$db->rawSQL("ALTER TABLE `menu` ADD PRIMARY KEY (`ID`);");
+					self::$db->rawSQL("ALTER TABLE `menu` ADD PRIMARY KEY (`ID`), ADD KEY `subgroup` (`subgroup`);");
 					self::$db->rawSQL("ALTER TABLE `menu` MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;");
+					self::$db->rawSQL("ALTER TABLE `menu` ADD CONSTRAINT `menu_ibfk_1` FOREIGN KEY (`subgroup`) REFERENCES `menu` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;"):
+					self::$db->rawSQL("INSERT INTO `menu` (`ID`, `name`, `href`, `priority`, `subgroup`, `meta`, `active`) VALUES (0, '', '', 0, NULL, '', 1);");
 					self::$db->commitTransaction();
 				}
 			} catch (Exception $e){
@@ -53,7 +55,20 @@ class menu {
 		}
 	}
 
-	
+	/**
+	 * Gets all entrys.
+	 *
+	 * @param      integer  $startGroup  The start group
+	 *
+	 * @return     <type>   All entrys.
+	 */
+	public static function getAllEntrys($startGroup=0){
+		foreach (self::getEntrysInGroup($startGroup) as $subEntry) {
+			self::getEntrysInGroup($subEntry['ID'])	;
+		}
+		return self::$menu;
+	}
+
 	/**
 	 * returns all menu entry's that are in the same group
 	 * @param      integer   $id     The entry identifier of one entry in the group
@@ -272,5 +287,6 @@ class menu {
 	}
 
 }
+//initialize the menu that it can be used staticly
 menu::checkObject();
 ?>
