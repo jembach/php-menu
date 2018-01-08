@@ -45,7 +45,7 @@ class menu {
 															`active` smallint(6) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
 					self::$db->rawSQL("ALTER TABLE `menu` ADD PRIMARY KEY (`ID`), ADD KEY `subgroup` (`subgroup`);");
 					self::$db->rawSQL("ALTER TABLE `menu` MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;");
-					self::$db->rawSQL("ALTER TABLE `menu` ADD CONSTRAINT `menu_ibfk_1` FOREIGN KEY (`subgroup`) REFERENCES `menu` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;"):
+					self::$db->rawSQL("ALTER TABLE `menu` ADD CONSTRAINT `menu_ibfk_1` FOREIGN KEY (`subgroup`) REFERENCES `menu` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;");
 					self::$db->rawSQL("INSERT INTO `menu` (`ID`, `name`, `href`, `priority`, `subgroup`, `meta`, `active`) VALUES (0, '', '', 0, NULL, '', 1);");
 					self::$db->commitTransaction();
 				}
