@@ -213,7 +213,10 @@ class menu {
 	 * @param      array  $data   The data of an entry
 	 */
 	protected static function saveData($data){
-		$data['meta']=@unserialize($data['meta']);
+		if(self::isSerialized($data['meta']))
+			$data['meta']=@unserialize($data['meta']);
+		else
+			$data['meta']=array($data['meta']);
 		if(!is_array($data['meta'])) $data['meta']=array();
 		self::$menu[$data['ID']]=$data;
 	}
@@ -284,6 +287,70 @@ class menu {
 		} catch (Exception $e) {
 			trigger_error("menu entry couldn't be deleted: ".$e->getMessage(),E_USER_WARNING);
 		}
+	}
+
+	/**
+	 * Determines if serialized.
+	 *
+	 * @param      <type>   $string  The string
+	 *
+	 * @return     boolean  True if serialized, False otherwise.
+	 * @license    Copyright (c) 2009 Chris Smith (http://www.cs278.org/)
+	 */
+	protected static function isSerialized($value){
+		if (!is_string($value))
+			return false;
+		if ($value === 'b:0;')
+		{
+			$result = false;
+			return true;
+		}
+		$length	= strlen($value);
+		$end	= '';
+		switch (substr($value,0,1))
+		{
+			case 's':
+				if (substr($value,$length-2,1) !== '"')
+					return false;
+			case 'b':
+			case 'i':
+			case 'd':
+				$end .= ';';
+			case 'a':
+			case 'O':
+				$end .= '}';
+				if (substr($value,1,1) !== ':')
+					return false;
+				switch (substr($value,2,1))
+				{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+					case 4:
+					case 5:
+					case 6:
+					case 7:
+					case 8:
+					case 9:
+					break;
+					default:
+						return false;
+				}
+			case 'N':
+				$end .= ';';
+				if (substr($value,$length-1,1) !== $end[0])
+					return false;
+			break;
+			default:
+				return false;
+		}
+		if (($result = @unserialize($value)) === false)
+		{
+			$result = null;
+			return false;
+		}
+		return true;
 	}
 
 }
