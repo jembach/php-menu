@@ -238,10 +238,14 @@ class menu {
 		}
 		$data['meta']=serialize($data['meta']);
 		try {
-			self::$db->Update('menu',$data,new dbCond('ID',$id));
-			$data['ID']=$id;
-			self::saveData($data);
-			return true;
+			if(self::$db->Update('menu',$data,new dbCond('ID',$id))){
+				$data['ID']=$id;
+				self::saveData($data);
+				return true;
+			} else {
+				trigger_error("menu entry couldn't be updated: ".self::$db->lastError,E_USER_WARNING);
+				return false;
+			}
 		} catch (Exception $e) {
 			trigger_error("menu entry couldn't be updated: ".$e->getMessage(),E_USER_WARNING);
 			return false;
